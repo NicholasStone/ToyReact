@@ -59,15 +59,24 @@ export function createElement(type, attrs, ...children) {
   for (const p in attrs) {
     e.setAttribute(p, attrs[p])
   }
-
-  for (let child of children) {
-    if (typeof child === 'string') {
-      // child = document.createTextNode(child)
-      // 利用封装的 TextWrapper 来替换 DOM 操作，把渲染工作交给 TextWrapper 完成
-      child = new TextWrapper(child)
+  // 由于 {this.children} 传入的是一个数组，因此需要在此进行相应的修改
+  // 考虑到数组内也有数组，因此需要把装成一个函数
+  let insertChildren = (children) => {
+    for (let child of children) {
+      if (typeof child === 'string') {
+        // child = document.createTextNode(child)
+        // 利用封装的 TextWrapper 来替换 DOM 操作，把渲染工作交给 TextWrapper 完成
+        child = new TextWrapper(child)
+      }
+      if (typeof child === 'object' && child instanceof Array) {
+        // 为了正确展开 children，递归调用 insertChildren
+        insertChildren(child)
+      } else {
+        e.appendChild(child)
+      }
     }
-    e.appendChild(child)
   }
+  insertChildren(children)
 
   return e
 }
